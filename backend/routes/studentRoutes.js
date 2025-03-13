@@ -5,6 +5,6 @@ const { getStudents, createStudent, enrollStudent, updateProgress } = require('.
 router.get('/', getStudents);
 router.post('/', createStudent);
 router.post('/enroll', enrollStudent);
-router.put('/progress', updateProgress); // New route for progress updates
+router.put('/progress', updateProgress);
 
 module.exports = router;

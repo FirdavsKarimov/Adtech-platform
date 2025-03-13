@@ -28,35 +28,45 @@ exports.enrollStudent = async (req, res) => {
     const course = await Course.findById(courseId);
     if (!student || !course) return res.status(404).json({ message: 'Student or course not found' });
 
-    const alreadyEnrolled = student.enrolledCourses.some(c => c.course.toString() === courseId);
+    const alreadyEnrolled = student.enrolledCourses.some(c => c.course && c.course.toString() === courseId);
     if (!alreadyEnrolled) {
       student.enrolledCourses.push({ course: courseId });
       course.enrolledStudents.push(studentId);
       await student.save();
       await course.save();
+      console.log('Enrolled student:', { studentId, courseId });
     }
     res.json({ message: 'Student enrolled successfully' });
   } catch (error) {
+    console.error('Error enrolling student:', error);
     res.status(400).json({ message: 'Error enrolling student', error: error.message });
   }
 };
 
 exports.updateProgress = async (req, res) => {
-  const { studentId, courseId, status, completion } = req.body;
+  const { studentId, courseId, status } = req.body;
   try {
     const student = await Student.findById(studentId);
     if (!student) return res.status(404).json({ message: 'Student not found' });
 
-    const courseProgress = student.enrolledCourses.find(c => c.course.toString() === courseId);
-    if (!courseProgress) return res.status(404).json({ message: 'Course not enrolled' });
+    console.log('Student enrolledCourses:', student.enrolledCourses);
+    console.log('Looking for courseId:', courseId);
+
+    const courseProgress = student.enrolledCourses.find(c => 
+      c.course && c.course.toString() === courseId
+    );
+    if (!courseProgress) {
+      console.log('Course not found in enrolledCourses');
+      return res.status(404).json({ message: 'Course not enrolled' });
+    }
 
     if (status) courseProgress.status = status;
-    if (completion !== undefined) courseProgress.completion = completion;
     courseProgress.lastUpdated = Date.now();
 
     await student.save();
     res.json({ message: 'Progress updated', courseProgress });
   } catch (error) {
+    console.error('Error in updateProgress:', error);
     res.status(400).json({ message: 'Error updating progress', error: error.message });
   }
 };

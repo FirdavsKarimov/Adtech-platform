@@ -60,7 +60,6 @@ exports.getAnalytics = async (req, res) => {
     const courses = await Course.find().populate('enrolledStudents');
     const students = await Student.find();
 
-    // Popular courses by enrollment count
     const popularCourses = courses
       .map(course => ({
         title: course.title,
@@ -69,7 +68,6 @@ exports.getAnalytics = async (req, res) => {
       .sort((a, b) => b.enrollmentCount - a.enrollmentCount)
       .slice(0, 5);
 
-    // Course completion stats
     const courseStats = await Student.aggregate([
       { $unwind: '$enrolledCourses' },
       {

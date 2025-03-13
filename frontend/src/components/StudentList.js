@@ -3,7 +3,7 @@ import { updateProgress } from '../services/api';
 
 const StudentList = ({ students, onStudentAdded }) => {
   const [formData, setFormData] = useState({ name: '', email: '' });
-  const [progressData, setProgressData] = useState({ studentId: '', courseId: '', status: '', completion: '' });
+  const [progressData, setProgressData] = useState({ studentId: '', courseId: '', status: '' });
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -20,16 +20,27 @@ const StudentList = ({ students, onStudentAdded }) => {
   };
 
   const handleProgressSubmit = async (studentId, courseId) => {
+    console.log('Submitting progress:', { 
+      studentId, 
+      courseId, 
+      status: progressData.status 
+    });
     try {
-      await updateProgress({ studentId, courseId, status: progressData.status, completion: progressData.completion });
+      await updateProgress({ 
+        studentId, 
+        courseId, 
+        status: progressData.status 
+      });
       alert('Progress updated successfully');
-      onStudentAdded(); // Refresh student list
-      setProgressData({ studentId: '', courseId: '', status: '', completion: '' });
+      onStudentAdded();
+      setProgressData({ studentId: '', courseId: '', status: '' });
     } catch (error) {
-      console.error('Error updating progress:', error);
-      alert('Failed to update progress');
+      console.error('Error updating progress:', error.response?.data || error.message);
+      alert('Failed to update progress: ' + (error.response?.data?.message || error.message));
     }
   };
+
+  console.log('Students data:', students);
 
   return (
     <div className="container">
@@ -60,40 +71,38 @@ const StudentList = ({ students, onStudentAdded }) => {
             <p>Email: {student.email}</p>
             <h4>Enrolled Courses:</h4>
             {student.enrolledCourses.length > 0 ? (
-              student.enrolledCourses.map(courseProgress => (
-                <div key={courseProgress.course._id}>
-                  <p>Course: {courseProgress.course.title}</p>
-                  <p>Status: {courseProgress.status}</p>
-                  <p>Completion: {courseProgress.completion}%</p>
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      handleProgressSubmit(student._id, courseProgress.course._id);
-                    }}
-                  >
-                    <select
-                      name="status"
-                      value={progressData.status}
-                      onChange={handleProgressChange}
+              student.enrolledCourses.map((courseProgress, index) => {
+                const courseId = courseProgress.course?._id || 
+                                courseProgress.course || 
+                                courseProgress._id || 
+                                `unknown-${index}`;
+                const courseTitle = courseProgress.course?.title || 'Unknown Course';
+
+                return (
+                  <div key={courseId}>
+                    <p>Course: {courseTitle}</p>
+                    <p>Status: {courseProgress.status}</p>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        handleProgressSubmit(student._id, courseId);
+                      }}
                     >
-                      <option value="">Update Status</option>
-                      <option value="not_started">Not Started</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="completed">Completed</option>
-                    </select>
-                    <input
-                      type="number"
-                      name="completion"
-                      placeholder="Completion % (0-100)"
-                      value={progressData.completion}
-                      onChange={handleProgressChange}
-                      min="0"
-                      max="100"
-                    />
-                    <button type="submit">Update Progress</button>
-                  </form>
-                </div>
-              ))
+                      <select
+                        name="status"
+                        value={progressData.status}
+                        onChange={handleProgressChange}
+                      >
+                        <option value="">Update Status</option>
+                        <option value="not_started">Not Started</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                      </select>
+                      <button type="submit">Update Progress</button>
+                    </form>
+                  </div>
+                );
+              })
             ) : (
               <p>No courses enrolled</p>
             )}
