@@ -14,7 +14,7 @@ A course management system for an EdTech platform with a Node.js/Express backend
 1. Navigate to `backend/`
 2. Install dependencies: `npm install`
 3. Create a `.env` file 
-4. Start the server: `npm start`
+4. Start the server: `npm start` `npm run dev `
 
 ### Frontend
 1. Navigate to `frontend/`
