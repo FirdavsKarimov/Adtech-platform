@@ -3,7 +3,7 @@ const Course = require('../models/Course');
 
 exports.getStudents = async (req, res) => {
   try {
-    const students = await Student.find().populate('enrolledCourses', 'title');
+    const students = await Student.find().populate('enrolledCourses.course', 'title');
     res.json(students);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -28,8 +28,9 @@ exports.enrollStudent = async (req, res) => {
     const course = await Course.findById(courseId);
     if (!student || !course) return res.status(404).json({ message: 'Student or course not found' });
 
-    if (!student.enrolledCourses.includes(courseId)) {
-      student.enrolledCourses.push(courseId);
+    const alreadyEnrolled = student.enrolledCourses.some(c => c.course.toString() === courseId);
+    if (!alreadyEnrolled) {
+      student.enrolledCourses.push({ course: courseId });
       course.enrolledStudents.push(studentId);
       await student.save();
       await course.save();
@@ -37,5 +38,25 @@ exports.enrollStudent = async (req, res) => {
     res.json({ message: 'Student enrolled successfully' });
   } catch (error) {
     res.status(400).json({ message: 'Error enrolling student', error: error.message });
+  }
+};
+
+exports.updateProgress = async (req, res) => {
+  const { studentId, courseId, status, completion } = req.body;
+  try {
+    const student = await Student.findById(studentId);
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+
+    const courseProgress = student.enrolledCourses.find(c => c.course.toString() === courseId);
+    if (!courseProgress) return res.status(404).json({ message: 'Course not enrolled' });
+
+    if (status) courseProgress.status = status;
+    if (completion !== undefined) courseProgress.completion = completion;
+    courseProgress.lastUpdated = Date.now();
+
+    await student.save();
+    res.json({ message: 'Progress updated', courseProgress });
+  } catch (error) {
+    res.status(400).json({ message: 'Error updating progress', error: error.message });
   }
 };

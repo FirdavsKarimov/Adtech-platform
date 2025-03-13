@@ -42,8 +42,8 @@ const Home = () => {
 
   const handleStudentAdded = async (data) => {
     try {
-      await createStudent(data);
-      fetchStudents();
+      if (data.name && data.email) await createStudent(data); // For adding new student
+      fetchStudents(); // Refresh after adding or updating progress
     } catch (error) {
       console.error('Error adding student:', error);
     }
